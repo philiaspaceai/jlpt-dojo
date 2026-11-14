@@ -80,6 +80,21 @@ def _data_uri(png: bytes) -> str:
     return "data:image/png;base64," + base64.b64encode(png).decode()
 
 
+def _last_content_row(pix) -> int:
+    """Index of the lowest non-white row, or -1 when the page is blank."""
+    samples = pix.samples
+    stride = pix.stride
+    channels = pix.n
+    width = pix.width
+    for y in range(pix.height - 1, -1, -1):
+        base = y * stride
+        for x in range(0, width, 2):
+            i = base + x * channels
+            if samples[i] < 250 or samples[i + 1] < 250 or samples[i + 2] < 250:
+                return y
+    return -1
+
+
 def _fmt_num(n: int | float) -> str:
     if isinstance(n, float):
         return f"{n:.1f}" if n < 100 else f"{int(n):,}"
@@ -191,5 +206,13 @@ def profile_card(payload: dict, pkg_dir: str | Path) -> bytes:
     pdf = HTML(string=html, base_url=str(assets) + "/").write_pdf(target=None)
     doc = fitz.open(stream=pdf, filetype="pdf")
     pg = doc[0]
-    pix = pg.get_pixmap(matrix=fitz.Matrix(1280 / pg.rect.width, 1280 / pg.rect.width))
+    scale = 1280 / pg.rect.width
+    matrix = fitz.Matrix(scale, scale)
+    pix = pg.get_pixmap(matrix=matrix)
+    # Special cards are content-height (858-912px) but the page is fixed at
+    # 980px: trim the unused white band below the footer.
+    bottom = _last_content_row(pix)
+    if -1 < bottom < pix.height - 1:
+        clip = fitz.Rect(0, 0, pg.rect.width, (bottom + 1) / scale)
+        pix = pg.get_pixmap(matrix=matrix, clip=clip)
     return pix.tobytes("png")

@@ -47,6 +47,40 @@ def test_render_special_card():
     assert _is_png(png) and len(png) > 50_000
 
 
+def _png_rows(data: bytes) -> tuple[int, int, int]:
+    """(width, height, last non-white row index) for a PNG byte string."""
+    import fitz
+
+    pix = fitz.Pixmap(data)
+    last = -1
+    for y in range(pix.height - 1, -1, -1):
+        base = y * pix.stride
+        if any(
+            pix.samples[base + x * pix.n] < 250
+            or pix.samples[base + x * pix.n + 1] < 250
+            or pix.samples[base + x * pix.n + 2] < 250
+            for x in range(0, pix.width, 2)
+        ):
+            last = y
+            break
+    return pix.width, pix.height, last
+
+
+def test_special_card_trims_white_band():
+    png = profile_card(_payload("special", 7), PKG)
+    width, height, last = _png_rows(png)
+    assert width == 1280
+    assert height < 980  # page is 980px; the blank band was trimmed
+    assert last == height - 1  # footer background reaches the bottom edge
+
+
+def test_normal_card_keeps_full_height():
+    png = profile_card(_payload("normal", 2), PKG)
+    width, height, last = _png_rows(png)
+    assert (width, height) == (1280, 720)
+    assert last == height - 1
+
+
 def test_badge_icon_fallbacks():
     assert badge_icon("x", "nope", "common", False, "houga", ASSETS) == "badge-nope.svg"
     assert badge_icon("nightowl", "nightowl", "rare", False, "meijin", ASSETS) == "badge-nightowl-meijin.svg"
