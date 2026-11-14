@@ -16,16 +16,18 @@ exp:
   weekend_double: true
   daily_soft_cap: [{ upto: 100, mult: 1.0 }, { upto: 200, mult: 0.5 }, { mult: 0.1 }]
 
-# gates: minimum CORRECT answers at exact level to enter the rank.
+# gates: minimum CORRECT answers to enter the rank.
+# gate_scope: cumulative = answers at that level OR higher count (ranks 2-7).
+# Ranks 8-10 stay exact-level on purpose: special ranks need N2/N1 played.
 # trials: extra checks for ranks 8-10 (all must hold).
 ranks:
   - { id: houga,   en: Houga,   ja: "萌芽", threshold: 0, color: "#5DA24A" }
-  - { id: reimei,  en: Reimei,  ja: "黎明", threshold: 2000, color: "#D98A1F", gates: { N5: 20 } }
-  - { id: saku,    en: Saku,    ja: "咲", threshold: 8000, color: "#D95D87", gates: { N5: 60, N4: 30 } }
-  - { id: seikou,  en: Seikou,  ja: "星光", threshold: 20000, color: "#4A90C4", gates: { N5: 60, N4: 100 } }
-  - { id: meijin,  en: Meijin,  ja: "名人", threshold: 45000, color: "#C9A227", gates: { N4: 100, N3: 50 } }
-  - { id: shinsei, en: Shinsei, ja: "新星", threshold: 90000, color: "#2F6FED", gates: { N3: 150 } }
-  - { id: seikan,  en: Seikan,  ja: "星冠", threshold: 160000, color: "#8A94A6", gates: { N3: 150, N2: 50 } }
+  - { id: reimei,  en: Reimei,  ja: "黎明", threshold: 2000, color: "#D98A1F", gates: { N5: 20 }, gate_scope: cumulative }
+  - { id: saku,    en: Saku,    ja: "咲", threshold: 8000, color: "#D95D87", gates: { N5: 60, N4: 30 }, gate_scope: cumulative }
+  - { id: seikou,  en: Seikou,  ja: "星光", threshold: 20000, color: "#4A90C4", gates: { N5: 60, N4: 100 }, gate_scope: cumulative }
+  - { id: meijin,  en: Meijin,  ja: "名人", threshold: 45000, color: "#C9A227", gates: { N4: 100, N3: 50 }, gate_scope: cumulative }
+  - { id: shinsei, en: Shinsei, ja: "新星", threshold: 90000, color: "#2F6FED", gates: { N3: 150 }, gate_scope: cumulative }
+  - { id: seikan,  en: Seikan,  ja: "星冠", threshold: 160000, color: "#8A94A6", gates: { N3: 150, N2: 50 }, gate_scope: cumulative }
   - { id: ryuusei, en: Ryuusei, ja: "流星", threshold: 260000, color: "#4A90C4", gates: { N2: 200 },
       trials: [{ type: accuracy_window, n: 100, min_acc: 0.80, levels: [N2, N1] }] }
   - { id: suisei,  en: Suisei,  ja: "彗星", threshold: 430000, color: "#59D6E6", gates: { N2: 300, N1: 100 },

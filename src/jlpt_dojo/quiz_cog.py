@@ -117,6 +117,19 @@ class QuizCog(commands.Cog):
             archived.append(season_exp_from_file(path).get(user_id, 0))
         return progression.lifetime_exp(season_exp, archived, int(self.exp_cfg.get("lifetime_ceiling", 1_000_000)))
 
+    async def recalculate_ranks(self) -> None:
+        """Reconcile players.rank_id with the current rules on startup.
+
+        Ranks only ever move up. Running this at boot makes a rules change
+        (e.g. cumulative gates) visible immediately instead of waiting for
+        every player's next answer.
+        """
+        changed = 0
+        for user_id in await self.db.player_ids():
+            if await self._refresh_rank(user_id):
+                changed += 1
+        log.info("rank recalculation: %s player(s) promoted", changed)
+
     # ---------- QuizHooks ----------
 
     async def on_session_start(self, session: QuizSession) -> None:

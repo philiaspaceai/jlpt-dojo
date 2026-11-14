@@ -27,7 +27,9 @@ def build_bot(settings: Settings, store: QuestionStore, manager: QuizManager,
 
     async def _setup_hook() -> None:
         await db.open()
-        await bot.add_cog(QuizCog(bot, settings, store, manager, db, prog))
+        cog = QuizCog(bot, settings, store, manager, db, prog)
+        await bot.add_cog(cog)
+        await cog.recalculate_ranks()
         # Sync slash commands to the single guild for instant availability.
         try:
             guild = discord.Object(id=settings.guild_id)

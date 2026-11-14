@@ -15,6 +15,9 @@ RANK_ORDER = [
     "shinsei", "seikan", "ryuusei", "suisei", "shindan",
 ]
 
+# JLPT order, easiest to hardest. Used for cumulative gate credit.
+LEVEL_ORDER = ["N5", "N4", "N3", "N2", "N1"]
+
 
 def base_exp_for_level(level: str, table: dict[str, int] | None = None) -> int:
     table = table or BASE_EXP
@@ -78,6 +81,17 @@ def gates_hold(gates: dict[str, int], per_level_correct: dict[str, int]) -> bool
     return all(per_level_correct.get(lvl, 0) >= need for lvl, need in gates.items())
 
 
+def cumulative_level_counts(per_level_correct: dict[str, int]) -> dict[str, int]:
+    """Counts per level where harder answers also count for easier gates.
+
+    The N5 quota includes N1 answers; the N1 quota does not include N5.
+    """
+    return {
+        lvl: sum(int(per_level_correct.get(higher, 0)) for higher in LEVEL_ORDER[i:])
+        for i, lvl in enumerate(LEVEL_ORDER)
+    }
+
+
 def accuracy_of(recent: list[dict], levels: list[str] | None = None) -> float | None:
     """recent: [{correct: bool, level: str}, ...] newest last. None if empty."""
     rows = [r for r in recent if not levels or r.get("level") in levels]
@@ -114,12 +128,19 @@ def rank_index_for(
     session_wins: int,
     best_n1_streak: int,
 ) -> int:
-    """Highest rank index whose threshold + gates + trials all hold."""
+    """Highest rank index whose threshold + gates + trials all hold.
+
+    Ranks with `gate_scope: cumulative` accept correct answers at that level
+    or higher; ranks without it keep the historical exact-level requirement
+    (ranks 8-10 stay special: N2/N1 counts must be earned at that level).
+    """
+    cumulative = cumulative_level_counts(per_level_correct)
     idx = 0
     for i, rank in enumerate(ranks_cfg):
         if exp < int(rank.get("threshold", 0)):
             break
-        if not gates_hold(rank.get("gates", {}) or {}, per_level_correct):
+        counts = cumulative if rank.get("gate_scope") == "cumulative" else per_level_correct
+        if not gates_hold(rank.get("gates", {}) or {}, counts):
             break
         trials = rank.get("trials", []) or []
         if not all(trial_holds(t, recent, session_wins, best_n1_streak) for t in trials):

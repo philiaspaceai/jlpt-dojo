@@ -61,3 +61,34 @@ def test_weekend_helper():
 def test_lifetime_ceiling():
     assert p.lifetime_exp(100, [200, 300], 1_000_000) == 600
     assert p.lifetime_exp(900_000, [500_000], 1_000_000) == 1_000_000
+
+
+def _real_ranks() -> list[dict]:
+    import yaml
+
+    with open("config.yaml", encoding="utf-8") as fh:
+        return yaml.safe_load(fh)["ranks"]
+
+
+def test_cumulative_level_counts():
+    assert p.cumulative_level_counts({"N1": 10, "N3": 5}) == {
+        "N5": 15, "N4": 15, "N3": 15, "N2": 10, "N1": 10,
+    }
+
+
+def test_n1_only_player_reaches_exp_rank():
+    """A player who never touched N5-N2 still ranks up on the normal ranks."""
+    ranks = _real_ranks()
+    assert p.rank_index_for(33328, {"N1": 170}, ranks, [], 0, 0) == 3  # Seikou
+
+
+def test_special_ranks_keep_exact_level_gates():
+    """N1-only cannot enter Ryuusei: N2 200 must be earned at N2."""
+    ranks = _real_ranks()
+    assert p.rank_index_for(700000, {"N1": 500}, ranks, [], 0, 0) == 6  # Seikan
+
+
+def test_low_level_grinder_cannot_skip_ahead():
+    """N5-only EXP farming caps at Reimei, far from the special ranks."""
+    ranks = _real_ranks()
+    assert p.rank_index_for(700000, {"N5": 500}, ranks, [], 0, 0) == 1  # Reimei

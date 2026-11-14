@@ -114,6 +114,12 @@ class Database:
                 "INSERT OR IGNORE INTO season_stats (user_id) VALUES (?)", (user_id,))
             await self._db.commit()
 
+    async def player_ids(self) -> list[int]:
+        async with self._lock:
+            assert self._db is not None
+            cur = await self._db.execute("SELECT user_id FROM players")
+            return [int(row[0]) for row in await cur.fetchall()]
+
     async def get_stats(self, user_id: int) -> dict:
         async with self._lock:
             assert self._db is not None

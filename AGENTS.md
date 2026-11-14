@@ -49,8 +49,10 @@
 
 ## Progression (tuned in config.yaml — code reads, never hardcodes)
 - 10 ranks Houga→Shindan (700k for Shindan, 1M lifetime ceiling); EXP only for
-  the scorer, scaled by question level; level quotas gate each rank; trials
-  for ranks 8–10 (rolling accuracy, wins, N1 streak).
+  the scorer, scaled by question level; level quotas gate each rank; ranks 2–7
+  use `gate_scope: cumulative` (N1 answers count toward N5/N4 quotas) so players
+  who never touch low levels still rank up; ranks 8–10 stay exact-level and
+  keep their trials (rolling accuracy, wins, N1 streak).
 - 10 badges, 8 display slots (`/jq badge` equip UI); conditions in `badges.py`,
   storage in `db.py`. Clean = session win with zero mistakes.
 - Season DB is one SQLite file; rollover archives the whole file to
